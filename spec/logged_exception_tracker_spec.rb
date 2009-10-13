@@ -1,10 +1,8 @@
 require File.dirname(__FILE__) + '/spec_helper'
 
-require "observers/add_trac_ticket"
-
 describe LoggedExceptionTracker do
   before(:each) do
-    ActiveRecord::Base.observers = LoggedExceptionTrackerObserver.instance
+    # ActiveRecord::Base.observers = TracTicketer::LoggedExceptionTrackerObserver.instance
     
     @request = ActionController::TestRequest.new
     @controller = mock(ActionController::Base.new,
@@ -123,6 +121,14 @@ describe LoggedExceptionTracker do
     it "should be valid if it has an associated logged exception" do
       @tracker.should be_valid
       @tracker.error_on(:logged_exceptions).should be_empty
+    end
+    
+    it "should be able to get the first exception associated to the tracker" do
+      # Create an extra associated exception so we know that we're getting the first
+      LoggedException.count.should == 1
+      LoggedExceptionTracker.create_from_exception(@controller, @exception, @data)
+      LoggedException.count.should == 2
+      @tracker.first_logged_exception.controller_name.should == @controller.controller_name
     end
   end
 end

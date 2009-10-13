@@ -1,7 +1,7 @@
 require "digest/md5"
 
 class LoggedExceptionTracker < ActiveRecord::Base
-  has_many :logged_exceptions
+  has_many :logged_exceptions, :order => "created_at ASC"
   
   validates_presence_of :logged_exceptions
   validates_presence_of :hex_hash
@@ -27,5 +27,9 @@ class LoggedExceptionTracker < ActiveRecord::Base
       Digest::MD5.hexdigest([controller.controller_name, controller.action_name, 
         exception.class.name, matches[1], matches[2]].join(''))
     end
+  end
+  
+  def first_logged_exception
+    logged_exceptions.first
   end
 end

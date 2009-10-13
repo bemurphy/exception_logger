@@ -5,3 +5,4 @@
   #require 'paginating_find'
 	#$PAGINATION_TYPE = 'paginating_find'
 LoggedExceptionsController.view_paths = [File.join(directory, 'views')]
+require "observers/trac_ticketer"
