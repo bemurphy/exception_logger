@@ -4,7 +4,7 @@ class <%= class_name %> < ActiveRecord::Migration
       t.column :exception_class,  :string
       t.column :controller_name,  :string
       t.column :action_name,      :string
-      t.column :<%= tracker_table_name.singularize %>_id,      :integer
+      t.column :<%= tracker_fk %>,      :integer
       t.column :message,          :text
       t.column :backtrace,        :text
       t.column :environment,      :text
