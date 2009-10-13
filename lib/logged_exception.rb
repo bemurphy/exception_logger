@@ -1,15 +1,17 @@
 class LoggedException < ActiveRecord::Base
+  belongs_to :logged_exception_tracker, :counter_cache => true
+  
   class << self
     def create_from_exception(controller, exception, data)
       message = exception.message.inspect
       message << "\n* Extra Data\n\n#{data}" unless data.blank?
       create! \
-        :exception_class => exception.class.name,
-        :controller_name => controller.controller_name,
-        :action_name     => controller.action_name,
-        :message         => message,
-        :backtrace       => exception.backtrace,
-        :request         => controller.request
+        :exception_class  => exception.class.name,
+        :controller_name  => controller.controller_name,
+        :action_name      => controller.action_name,
+        :message          => message,
+        :backtrace        => exception.backtrace,
+        :request          => controller.request
     end
     
     def find_exception_class_names
@@ -29,7 +31,7 @@ class LoggedException < ActiveRecord::Base
     backtrace = sanitize_backtrace(backtrace) * "\n" unless backtrace.is_a?(String)
     write_attribute :backtrace, backtrace
   end
-
+  
   def request=(request)
     if request.is_a?(String)
       write_attribute :request, request
