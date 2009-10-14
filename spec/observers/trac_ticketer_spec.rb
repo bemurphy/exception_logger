@@ -51,18 +51,21 @@ describe TracTicketer do
   end
   
   describe TracTicketer::LoggedExceptionTrackerObserver do
-    before(:each) do
-      ActiveRecord::Base.observers = TracTicketer::LoggedExceptionTrackerObserver.instance
+    before(:all) do
       @observer = TracTicketer::LoggedExceptionTrackerObserver.instance
     end
     
-    after(:each) do
-      # TODO figure out how to remove the observer
-      # ActiveRecord::Base.observers = nil
+    after(:all) do
+      LoggedExceptionTracker.delete_observers
     end
 
-    it "should have an after_create hook" do
+    it "should have an after_create callback" do
       @observer.should respond_to(:after_create)
+    end
+    
+    it "should call to create a Trac ticket in the after_create callback" do
+      TracTicketer::Ticket.should_receive(:create)
+      setup_exception_data
     end
 
     it "should observe the LoggedExceptionTracker model" do

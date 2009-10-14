@@ -2,8 +2,8 @@ require File.dirname(__FILE__) + '/spec_helper'
 
 describe LoggedExceptionTracker do
   before(:each) do
-    TracTicketer.configure {|config| config.trac_url = "http://localhost/trac/xmlrpc"}
     ActiveRecord::Base.observers = TracTicketer::LoggedExceptionTrackerObserver.instance
+    TracTicketer.configure {|config| config.trac_url = "http://localhost/trac/xmlrpc"}
     
     @request = ActionController::TestRequest.new
     @controller = mock(ActionController::Base.new,

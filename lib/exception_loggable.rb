@@ -21,11 +21,23 @@ require 'ipaddr'
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 module ExceptionLoggable
-  def self.included(target)
-    target.extend(ClassMethods)
+  def self.included(base)
+    i_methods = base.instance_methods.map(&:to_s)
+    
+    base.send(:alias_method, :rescue_action_in_public, :rescue_action_in_public_with_loggable)
+    base.extend(ClassMethods)
   end
 
   module ClassMethods
+    def method_added(method_sym)
+      return if instance_methods.map(&:to_s).include?("original_rescue_action_in_public")
+      
+      if method_sym == :rescue_action_in_public
+        alias_method :original_rescue_action_in_public, :rescue_action_in_public
+        alias_method :rescue_action_in_public, :rescue_action_in_public_with_loggable
+      end
+    end
+    
     def consider_local(*args)
       local_addresses.concat(args.flatten.map { |a| IPAddr.new(a) })
     end
@@ -48,18 +60,25 @@ module ExceptionLoggable
       end
     end
   end
+  
+  protected
 
   def local_request?
-    remote = IPAddr.new(request.remote_ip)
-    !self.class.local_addresses.detect { |addr| addr.include?(remote) }.nil?
+    return false
+    # remote = IPAddr.new(request.remote_ip)
+    # !self.class.local_addresses.detect { |addr| addr.include?(remote) }.nil?
   end
 
-  def rescue_action_in_public(exception)
+  def rescue_action_in_public_with_loggable(exception)
     status = response_code_for_rescue(exception)
-    render_optional_error_file status
+    # TODO: figure out why this was originally here
+    # Since I'm chaining to the original rescue_action_in_public now, we don't want
+    # to render 2x
+    # render_optional_error_file status
     log_exception(exception) if status != :not_found
+    original_rescue_action_in_public(exception) if respond_to?(:original_rescue_action_in_public)
   end
-
+  
   def log_exception(exception)
     deliverer = self.class.exception_data
     data = case deliverer
@@ -68,6 +87,6 @@ module ExceptionLoggable
       when Proc   then deliverer.call(self)
     end
 
-    LoggedException.create_from_exception(self, exception, data)
+    LoggedExceptionTracker.create_from_exception(self, exception, data)
   end
 end
