@@ -23,13 +23,20 @@ require 'ipaddr'
 module ExceptionLoggable
   def self.included(base)
     i_methods = base.instance_methods.map(&:to_s)
-    
+
+    base.send(:alias_method, :original_rescue_action_in_public, :rescue_action_in_public)
     base.send(:alias_method, :rescue_action_in_public, :rescue_action_in_public_with_loggable)
     base.extend(ClassMethods)
   end
 
   module ClassMethods
+    if respond_to?(:method_added)
+      alias_method :original_method_added, :method_added
+    end
+    
     def method_added(method_sym)
+      original_method_added(method_sym) if respond_to?(:original_method_added)
+        
       return if instance_methods.map(&:to_s).include?("original_rescue_action_in_public")
       
       if method_sym == :rescue_action_in_public
