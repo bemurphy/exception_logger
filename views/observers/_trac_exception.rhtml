@@ -1,0 +1,13 @@
+'''Request'''
+<%= @exc.request %>
+
+'''Exception Message'''
+!<%= @exc.exception_class %> in !<%= @exc.controller_name.camelcase %>#<%= @exc.action_name %>
+<%= @exc.message %>
+
+'''Backtrace'''
+{{{
+<%= ERB::Util.h(@exc.backtrace) %>
+}}}
+'''Environment'''
+<%= @exc.environment %>

@@ -5,15 +5,15 @@ require "trac4r/trac"
 module TracTicketer
   class << self
     attr_accessor :trac_url, :trac_username, :trac_password
-    attr_writer :trac_port, :trac_reporter
+    attr_writer :trac_reporter
     
     def configure
       yield self
     end
     
-    def trac_port
-      @trac_port || 80
-    end
+    # def trac_port
+    #   @trac_port || 80
+    # end
     
     def trac_reporter
       @trac_reporter || "exception_logger"
@@ -30,12 +30,24 @@ module TracTicketer
   
   class Ticket
     def self.create(logged_exception_tracker)
-      logged_exception = logged_exception_tracker.first_logged_exception
+      @exc = logged_exception_tracker.first_logged_exception
       
       trac = Trac.new(TracTicketer.trac_url, TracTicketer.trac_username, TracTicketer.trac_password)
-      trac.tickets.create("Summary", "Description", 
+
+      # TODO: Figure out how I can use ActionView rather than ERB directlyß
+      # action_view = ActionView::Base.new(File.dirname(__FILE__) + "/../../views", {})
+      # template action_view.render(:file => "observers/_trac_exception.rhtml")
+      lines = File.open(File.dirname(__FILE__) + 
+              "/../../views/observers/_trac_exception.rhtml"){|f| f.read}
+      exception_description = ERB.new(lines).result(binding)
+      # puts exception_description
+      
+      trac.tickets.create("Summary", exception_description, 
                           :reporter => TracTicketer.trac_reporter,
-                          :type => "defect")
+                          :priority => "normal",
+                          :type => "defect",
+                          :component => @exc.controller_name,
+                          :keywords => [@exc.controller_name, @exc.action_name, @exc.exception_class].compact.join(" "))
     end
   end
 end
