@@ -22,8 +22,6 @@ require 'ipaddr'
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 module ExceptionLoggable
   def self.included(base)
-    i_methods = base.instance_methods.map(&:to_s)
-
     base.send(:alias_method, :original_rescue_action_in_public, :rescue_action_in_public)
     base.send(:alias_method, :rescue_action_in_public, :rescue_action_in_public_with_loggable)
     base.extend(ClassMethods)
@@ -83,7 +81,7 @@ module ExceptionLoggable
     # to render 2x
     # render_optional_error_file status
     log_exception(exception) if status != :not_found
-    original_rescue_action_in_public(exception) if respond_to?(:original_rescue_action_in_public)
+    original_rescue_action_in_public(exception)
   end
   
   def log_exception(exception)
