@@ -2,7 +2,7 @@ class LoggedException < ActiveRecord::Base
   belongs_to :logged_exception_tracker, :counter_cache => true
   
   class << self
-    def create_from_exception(controller, exception, data)
+    def create_from_exception(controller, filtered_request, exception, data)
       message = exception.message.inspect
       message << "\n* Extra Data\n\n#{data}" unless data.blank?
       create! \
@@ -11,7 +11,7 @@ class LoggedException < ActiveRecord::Base
         :action_name      => controller.action_name,
         :message          => message,
         :backtrace        => exception.backtrace,
-        :request          => controller.request
+        :request          => filtered_request
     end
     
     def find_exception_class_names

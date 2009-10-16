@@ -9,10 +9,10 @@ class LoggedExceptionTracker < ActiveRecord::Base
   validates_length_of :hex_hash, :is => 32
   validates_format_of :hex_hash, :with => /^[A-F0-9]+$/i
   
-  def self.create_from_exception(controller, exception, data)
+  def self.create_from_exception(controller, request, exception, data)
     hex_hash = generate_hash(controller, exception)
     if tracker = find_or_initialize_by_hex_hash(hex_hash)
-      tracker.logged_exceptions << LoggedException.create_from_exception(controller, exception, data)
+      tracker.logged_exceptions << LoggedException.create_from_exception(controller, request, exception, data)
     end
     tracker.save!
     tracker

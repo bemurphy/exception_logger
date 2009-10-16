@@ -2,8 +2,8 @@ require File.dirname(__FILE__) + '/spec_helper'
 
 describe LoggedExceptionTracker do
   before(:each) do
-    ActiveRecord::Base.observers = TracTicketer::LoggedExceptionTrackerObserver.instance
-    TracTicketer.configure {|config| config.trac_url = "http://localhost/trac/xmlrpc"}
+    # ActiveRecord::Base.observers = TracTicketer::LoggedExceptionTrackerObserver.instance
+    # TracTicketer.configure {|config| config.trac_url = "http://localhost/trac/xmlrpc"}
     
     @request = ActionController::TestRequest.new
     @controller = mock(ActionController::Base.new,
@@ -19,7 +19,7 @@ describe LoggedExceptionTracker do
       caught_exception
     end
     @expected_hash = "8d298f2fb359cafdec9a6a28e70c9549"
-    @tracker = LoggedExceptionTracker.create_from_exception(@controller, @exception, @data)
+    @tracker = LoggedExceptionTracker.create_from_exception(@controller, @request, @exception, @data)
   end
 
   describe "dedupe hashing" do
@@ -52,15 +52,15 @@ describe LoggedExceptionTracker do
     end
     
     it "should not create a new tracker if one already exists" do
-      tracker = LoggedExceptionTracker.create_from_exception(@controller, @exception, @data)
+      tracker = LoggedExceptionTracker.create_from_exception(@controller, @request, @exception, @data)
       LoggedExceptionTracker.find(:all).length.should == 1
-      LoggedExceptionTracker.create_from_exception(@controller, @exception, @data)
+      LoggedExceptionTracker.create_from_exception(@controller, @request, @exception, @data)
       LoggedExceptionTracker.find(:all).length.should == 1
     end
     
     it "should return the stored tracker if called for the same exception" do
-      tracker = LoggedExceptionTracker.create_from_exception(@controller, @exception, @data)
-      another_tracker = LoggedExceptionTracker.create_from_exception(@controller, @exception, @data)
+      tracker = LoggedExceptionTracker.create_from_exception(@controller, @request, @exception, @data)
+      another_tracker = LoggedExceptionTracker.create_from_exception(@controller, @request, @exception, @data)
       tracker.should == another_tracker
     end
     
@@ -70,7 +70,7 @@ describe LoggedExceptionTracker do
     
     it "should associate a new logged_exception to the already existing tracker if one exists" do
       LoggedException.count.should == 1
-      LoggedExceptionTracker.create_from_exception(@controller, @exception, @data)
+      LoggedExceptionTracker.create_from_exception(@controller, @request, @exception, @data)
       LoggedException.count.should == 2
     end
     
@@ -127,7 +127,7 @@ describe LoggedExceptionTracker do
     it "should be able to get the first exception associated to the tracker" do
       # Create an extra associated exception so we know that we're getting the first
       LoggedException.count.should == 1
-      LoggedExceptionTracker.create_from_exception(@controller, @exception, @data)
+      LoggedExceptionTracker.create_from_exception(@controller, @request, @exception, @data)
       LoggedException.count.should == 2
       @tracker.first_logged_exception.controller_name.should == @controller.controller_name
     end

@@ -26,6 +26,6 @@ module LoggedExceptionTrackerHelper
       caught_exception
     end
     @expected_hash = "8d298f2fb359cafdec9a6a28e70c9549"
-    @tracker = LoggedExceptionTracker.create_from_exception(@controller, @exception, @data)
+    @tracker = LoggedExceptionTracker.create_from_exception(@controller, @request, @exception, @data)
   end  
 end

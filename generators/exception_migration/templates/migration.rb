@@ -13,10 +13,10 @@ class <%= class_name %> < ActiveRecord::Migration
     end
     
     create_table "<%= tracker_table_name %>", :force => true do |t|
-      t.column :hex_hash,           :string
-      t.column :external_ticket_id, :integer
-      t.column :counter_cache,      :integer
-      t.column :created_at,         :datetime
+      t.column :hex_hash,                 :string
+      t.column :external_ticket_id,       :integer
+      t.column :logged_exceptions_count,  :integer
+      t.column :created_at,               :datetime
     end
   end
 

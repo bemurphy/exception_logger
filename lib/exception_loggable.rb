@@ -67,7 +67,7 @@ module ExceptionLoggable
   end
   
   protected
-
+  
   def local_request?
     return false
     # remote = IPAddr.new(request.remote_ip)
@@ -83,7 +83,7 @@ module ExceptionLoggable
     log_exception(exception) if status != :not_found
     original_rescue_action_in_public(exception)
   end
-  
+    
   def log_exception(exception)
     deliverer = self.class.exception_data
     data = case deliverer
@@ -91,7 +91,71 @@ module ExceptionLoggable
       when Symbol then send(deliverer)
       when Proc   then deliverer.call(self)
     end
-
-    LoggedExceptionTracker.create_from_exception(self, exception, data)
+    
+    # It's kind of redundant to pass in controller and a filtered request, but, I don't want
+    # to monkey with the running controller.  The other option would be a controller proxy,
+    # but that feels like overkill
+    filter_request_proxy = FilterRequestProxy.new(request, filtered_sensitive_parameters, filtered_sensitive_env)
+    # filtered_controller_proxy = FilterControllerProxy.new(self, filtered_sensitive_parameters, filtered_sensitive_env)
+    LoggedExceptionTracker.create_from_exception(self, filter_request_proxy, exception, data)
   end
+  
+  module ExceptionLoggableProxy
+    instance_methods.each { |m| undef_method m unless m =~ /(^__|^send$|^object_id$)/ }
+
+    def initialize(target, f_params, f_env)
+      @target = target
+      @f_params = f_params
+      @f_env = f_env
+    end
+    
+    protected
+    def method_missing(name, *args, &block)
+      @target.send(name, *args, &block)
+    end
+    public
+  end
+  
+  # Not even close
+  # class FilterControllerProxy    
+  #   include ExceptionLoggableProxy
+  #   
+  #   def initialize(target, f_params, f_env)
+  #     super
+  #     
+  #     if @target.respond_to?(:filter_parameters)
+  #       def request
+  #         return @filter_controller_proxy if defined?(@filter_controller_proxy)
+  #         real_request = @target.send(name, *args, &block)
+  #         @filter_controller_proxy = FilterControllerProxy.new(real_request, @f_params, @f_env)        
+  #       end
+  #     end
+  #   end    
+  # end
+  
+  class FilterRequestProxy
+    include ExceptionLoggableProxy
+    
+    def parameters
+      @f_params
+    end
+    
+    def env
+      @f_env
+    end
+  end
+    
+  def filter_parameters?
+    respond_to?(:filter_parameters)
+  end
+  
+  def filtered_sensitive_parameters
+    filter_parameters? ? filter_parameters(request.params) : request.params
+  end
+  
+  def filtered_sensitive_env
+    mutuable_env = request.env.dup
+    mutuable_env.each {|key, value| mutuable_env[key] = '[FILTERED]' if key =~ /RAW_POST_DATA/i}
+  end
+  
 end
